@@ -1,0 +1,412 @@
+1. Basic Setup & Initialization
+
+From the documentation:
+// 1. Include GLFW (and your loader, such as GLAD)
+#define GLFW_INCLUDE_NONE   // if you’re using GLAD (to prevent GLFW from including old OpenGL headers)
+#include <GLFW/glfw3.h>
+
+// 2. Error callback (optional, but good practice)
+void error_callback(int error, const char* description)
+{
+    fprintf(stderr, "GLFW Error (%d): %s\n", error, description);
+}
+glfwSetErrorCallback(error_callback);
+
+// 3. Initialize GLFW
+if (!glfwInit())
+    return -1;  // Initialization failed
+
+// ... later, when exiting the program:
+glfwTerminate();
+
+__________________________________________
+How:
+
+You include <GLFW/glfw3.h> and optionally a loader like GLAD before that (and use #define GLFW_INCLUDE_NONE if you are letting your loader include OpenGL headers). 
+GLFW
++1
+
+Set an error callback via glfwSetErrorCallback() before calling glfwInit() if you want to catch initialization errors. 
+GLFW
++1
+
+Call glfwInit() at the beginning of your program, and glfwTerminate() at the end (after destroying windows). 
+GLFW
++1
+
+Why:
+
+GLFW abstracts away window + context creation and input handling, so you don’t have to deal with platform-specific APIs directly.
+
+The error callback helps you debug initialization issues early (driver/context failures) rather than encountering obscure failures later.
+
+Initialising and terminating properly ensures resources (window, context, callbacks) are cleaned up.
+
+When/Where:
+
+Use in your program’s startup phase (just after your loader and includes).
+
+Use glfwTerminate() at program exit, or after you destroy all windows and are sure you won’t use GLFW functions anymore.
+
+====================================
+
+2. Creating a Window & Context
+
+From the window guide:
+// Before creating window, you may set hints (see below)
+// Example: require OpenGL 3.3 core profile
+glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+// Create window + context
+GLFWwindow* window = glfwCreateWindow(640, 480, "My Title", nullptr, nullptr);
+if (!window)
+{
+    glfwTerminate();
+    return -1;
+}
+
+// Make context current on this thread
+glfwMakeContextCurrent(window);
+
+_______________________________________________
+
+How:
+
+You optionally call glfwWindowHint() to configure hints (required version, profile, resizable, etc) before glfwCreateWindow. 
+GLFW
+
+Call glfwCreateWindow(width, height, title, monitor, share). The monitor parameter is nullptr for windowed mode; share allows sharing resources with another context (often nullptr). 
+GLFW
+
+Check the returned pointer; if it's NULL, window/context creation failed.
+
+Then call glfwMakeContextCurrent(window) so all subsequent OpenGL calls apply to that context.
+
+Why:
+
+You need both a window and an OpenGL (or OpenGL ES) context to actually render anything. GLFW handles both in one call.
+
+Setting the context current is essential before making OpenGL calls (or loading function pointers via your loader).
+
+By specifying version/profile hints, you can control compatibility, features, and avoid undefined behaviours.
+
+When/Where:
+
+This occurs just after initialization in your program’s startup.
+
+After this, you can start loading OpenGL functions (e.g., via GLAD) and setting up your rendering state.
+
+==================================
+3. Window Hints & Configuration
+
+From window guide:
+// Example hints:
+glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);   // Create but hidden
+glfwWindowHint(GLFW_DECORATED, GLFW_FALSE); // No border/titlebar
+glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
+glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+// For framebuffer (pixel format) hints:
+glfwWindowHint(GLFW_RED_BITS, 8);
+glfwWindowHint(GLFW_DEPTH_BITS, 24);
+glfwWindowHint(GLFW_SAMPLES, 4);   // 4x MSAA
+
+// For full screen / monitor hints:
+glfwWindowHint(GLFW_REFRESH_RATE, GLFW_DONT_CARE);
+
+__________________________________________
+
+How:
+
+Use glfwWindowHint(hint, value) before creating the window. Hints set parameters for window + context creation. 
+GLFW
+
+Hints include window properties (resizable, decorated), context properties (version, profile), framebuffer properties (color/depth bits, antialiasing), monitor/refresh rate for full screen.
+
+Some hints are hard constraints (creation will fail if not met) and some are soft constraints (GLFW will pick best match). For example, GLFW_CLIENT_API, GLFW_CONTEXT_CREATION_API etc are hard. 
+GLFW
+
+Why:
+
+You may want to customize the window for your game: no borders (for VR/fullscreen), fixed size, specific color depth, MSAA.
+
+Ensures you get the correct OpenGL context version/profile (which your shaders or features may require).
+
+For performance or compatibility: e.g., disabling MSAA if not needed; or setting GLFW_VISIBLE = GLFW_FALSE to configure things offscreen before showing window.
+
+When/Where:
+
+Right after glfwInit() and before glfwCreateWindow().
+
+In your project this might be done once, or you might have a “settings” section where you pick window mode (windowed vs fullscreen) and apply hints accordingly.
+
+=============================
+4. Window Events / Loop / Termination
+
+From window guide:
+// The main loop
+while (!glfwWindowShouldClose(window))
+{
+    // – handle rendering, update logic here –
+
+    glfwSwapBuffers(window);    // Present the frame
+    glfwPollEvents();           // Process input / window events
+}
+
+// Cleanup
+glfwDestroyWindow(window);
+glfwTerminate();
+
+________________________________
+How:
+
+glfwWindowShouldClose(window) returns whether the user attempted to close the window (e.g., by clicking the X). You check this each frame. 
+GLFW
+
+glfwSwapBuffers(window) swaps front/back buffers (given double buffering). 
+GLFW
+
+glfwPollEvents() processes all pending events (input, window resize, close, etc). 
+GLFW
+
+When exiting the loop, destroy the window with glfwDestroyWindow() and then call glfwTerminate(). Not strictly required in simple cases (terminate will destroy remaining windows), but good practice. 
+GLFW
+
+Why:
+
+The loop is the “game loop” structure: you check for exit, update & render, then present & poll events.
+
+Without processing events, your window may become unresponsive (OS thinks the app is frozen).
+
+Buffer swap is needed to present rendered content to screen; you render to back buffer then swap.
+
+Proper cleanup prevents resource leaks especially if you create/destroy multiple windows or contexts.
+
+When/Where:
+
+This is your main loop (after initialization, window creation, OpenGL setup).
+
+At program shutdown (or if you need to recreate window/context during runtime), you perform the destroy + terminate sequence.
+
+========================
+5. Window Size / Framebuffer Size / DPI Awareness
+
+From window guide:
+// Query window size (in screen coordinates)
+int width, height;
+glfwGetWindowSize(window, &width, &height);
+
+// Query framebuffer size (in pixels)
+int fbWidth, fbHeight;
+glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
+
+// Set callback for when framebuffer size changes
+void framebuffer_size_callback(GLFWwindow* window, int w, int h)
+{
+    glViewport(0, 0, w, h);
+}
+glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+
+___________________________
+How:
+
+Use glfwGetWindowSize() to get the size of the window’s content area in screen coordinates (which might not equal pixels on high‐DPI displays). 
+GLFW
+
+Use glfwGetFramebufferSize() to get the size of the framebuffer in pixels (important for correct OpenGL viewport). 
+GLFW
+
+Set a callback with glfwSetFramebufferSizeCallback() to react when the framebuffer size changes (e.g., window moved to different DPI monitor).
+
+In the callback, you typically call glViewport(0,0,width,height) so OpenGL knows about new pixel size.
+
+Why:
+
+If you set the viewport with screen‐coordinate size instead of pixel size, your rendering can appear blurry or clipped on high‐DPI monitors.
+
+Adapting to framebuffer size changes ensures your rendering always uses the full window/resolution.
+
+Using callbacks avoids having to poll sizes every frame and handles resizing elegantly.
+
+When/Where:
+
+After you create window + context, before your main render loop—or early in setup.
+
+The callback remains valid for the window lifetime, so you can respond to resizing at any time.
+
+In your game loop you might check sizes if you need to dynamically react, but the callback is cleaner.
+
+=============================
+6. Full Screen & Monitor Handling
+
+From window guide:
+// To create fullscreen on primary monitor:
+GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+GLFWwindow* window = glfwCreateWindow(mode->width, mode->height, "FullScreen", monitor, nullptr);
+
+// To switch between windowed and fullscreen:
+glfwSetWindowMonitor(window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+
+// To go back to windowed:
+glfwSetWindowMonitor(window, nullptr, xpos, ypos, width, height, 0);
+
+_____________________________
+How:
+
+Get the primary monitor via glfwGetPrimaryMonitor(). 
+GLFW
+
+Get the current video mode of that monitor via glfwGetVideoMode(monitor). 
+GLFW
+
+Create a window in full screen by passing the monitor to glfwCreateWindow() (instead of nullptr).
+
+To switch modes at runtime, use glfwSetWindowMonitor().
+
+Why:
+
+Full screen mode is often desired for games (immersive, consistent refresh rate).
+
+Dynamically toggling between windowed/fullscreen (or changing monitor resolution) gives user flexibility and better compatibility.
+
+Knowing monitor video modes helps adapt resolution or refresh rate to the user’s hardware.
+
+When/Where:
+
+At startup if the user chooses “fullscreen” mode—or when you switch modes during runtime (e.g., user toggles fullscreen).
+
+Useful in your car/VR system project, where full screen immersive display may be preferred.
+
+============================
+7. Callbacks & Input Handling
+
+From window guide:
+// Setting a key callback
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, GLFW_TRUE);
+}
+glfwSetKeyCallback(window, key_callback);
+
+// Setting window close callback
+void window_close_callback(GLFWwindow* window)
+{
+    // Decide whether to allow close or cancel
+    glfwSetWindowShouldClose(window, GLFW_FALSE);
+}
+glfwSetWindowCloseCallback(window, window_close_callback);
+_______________________
+How:
+
+Define functions matching the callback types (e.g., GLFWkeyfun for key events).
+
+Use glfwSetKeyCallback(), glfwSetWindowCloseCallback(), glfwSetWindowSizeCallback(), etc. to register handlers. 
+GLFW
+
+In your loop you still poll events; callbacks are invoked during glfwPollEvents() (or glfwWaitEvents()).
+
+Why:
+
+Callbacks allow you to respond to user input or window events (resize, close, minimize, focus) efficiently.
+
+For a VR or car-system project, you'll likely need to handle input (keyboard/gamepad), window resizing, focus loss, etc.
+
+Makes your code clearer—event handling separated from rendering logic.
+
+When/Where:
+
+After window/context creation and before the main loop (so you’re ready to receive events).
+
+Throughout the application life: callbacks remain valid until you unregister or destroy the window.
+
+Use relevant callbacks for your specific project needs (e.g., resizing, focus, input).
+============================
+8. Context & Rendering Preparation
+
+From “Getting Started” guide:
+// After making context current:
+if (!gladLoadGL(glfwGetProcAddress))
+{
+    std::cerr << "Failed to initialize GLAD\n";
+    return -1;
+}
+
+// Set viewport
+int fbWidth, fbHeight;
+glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
+glViewport(0, 0, fbWidth, fbHeight);
+
+// Optionally set swap interval (vsync)
+glfwSwapInterval(1);
+____________________________
+// After making context current:
+if (!gladLoadGL(glfwGetProcAddress))
+{
+    std::cerr << "Failed to initialize GLAD\n";
+    return -1;
+}
+
+// Set viewport
+int fbWidth, fbHeight;
+glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
+glViewport(0, 0, fbWidth, fbHeight);
+
+// Optionally set swap interval (vsync)
+glfwSwapInterval(1);
+_____________________________
+How:
+
+After glfwMakeContextCurrent(), you must load OpenGL function pointers via your loader (e.g., GLAD). The loader requires a current context. 
+GLFW
+
+Fetch the current framebuffer size and set the OpenGL viewport accordingly.
+
+Optionally call glfwSwapInterval(1) to enable vertical sync (vsync) so buffer swaps synchronize to display refresh. 
+GLFW
+
+Why:
+
+Without loading function pointers, many modern OpenGL calls will be unresolved at runtime.
+
+Setting viewport correctly ensures rendering uses correct resolution/pixel size.
+
+Vsync prevents tearing and can reduce wasted GPU/CPU cycles on fast systems.
+
+When/Where:
+
+Immediately after window creation and context current.
+
+Before your render loop.
+
+If you change framebuffer size (via callback) you should again update viewport.
+=======================
+=======================
+Summary Table
+Stage	GLFW Step	Purpose
+Initialization	glfwInit() + error callback	Set up GLFW library
+Window/Context creation	glfwWindowHint() → glfwCreateWindow()	Create window + OpenGL context
+Context setup	glfwMakeContextCurrent()	Ensure OpenGL calls target the correct context
+Function loading	gladLoadGL(...)	Load OpenGL functions (after context ready)
+Viewport & swap interval	glViewport() + glfwSwapInterval(1)	Set up rendering size + sync behaviour
+Main loop	while(!glfwWindowShouldClose(...))	Game/render loop
+Event handling	glfwPollEvents(), callbacks	Handle user/window input and events
+Cleanup	glfwDestroyWindow() + glfwTerminate()	Release resources before exit
+__________________________
+Practical Tips for Your Project (VR / Car System in Unity/Native Hybrid)
+
+Since you’re working in a VR/car system scenario, and likely using OpenGL or OpenGL ES via Unity or native plugin, make sure your context version/profile matches what your shaders/engine expect (use glfwWindowHint() accordingly).
+
+If you plan to render or test on a high‐DPI monitor (or move between monitors), use glfwGetFramebufferSize() and handle resizing so your UI and graphics aren’t blurry or mis‐scaled.
+
+For switching modes (windowed vs fullscreen) dynamically (e.g., entering VR mode or external display), utilise glfwSetWindowMonitor() to manage display mode changes properly.
+
+Use callbacks for input (keyboard/gamepad) and window events (focus/loss) since for a VR environment you’ll need to handle context loss or focus changes gracefully.
+
+Even if Unity handles most of the rendering, if you’re integrating native OpenGL/GLFW for custom tools or debugging windows, this setup becomes your foundation.
+

@@ -1,0 +1,469 @@
+1. Drawing an object (textured or solid)
+How & why
+
+You need to upload vertex data (positions + optional texture coords) to GPU, set up a shader (vertex + fragment), and render.
+
+Textures give you sprite graphics for your platformer characters or objects. Without textures you can draw coloured quads.
+
+You’ll likely reuse this for many objects (player, platforms, background elements) so good structure helps.
+
+Code snippet – solid colour quad
+// Vertex data: positions (x,y), for a 2D quad centred at origin  
+float vertices[] = {
+    // x     y
+    -0.5f, -0.5f,
+     0.5f, -0.5f,
+     0.5f,  0.5f,
+    -0.5f,  0.5f
+};
+unsigned int indices[] = {
+    0,1,2,
+    2,3,0
+};
+
+// Setup (once)
+unsigned int VBO, VAO, EBO;
+glGenVertexArrays(1, &VAO);
+glGenBuffers(1, &VBO);
+glGenBuffers(1, &EBO);
+
+glBindVertexArray(VAO);
+
+glBindBuffer(GL_ARRAY_BUFFER, VBO);
+glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+// position attribute
+glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+glEnableVertexAttribArray(0);
+
+glBindBuffer(GL_ARRAY_BUFFER, 0);
+glBindVertexArray(0);
+
+// Rendering (each frame)
+shader.use();
+glBindVertexArray(VAO);
+glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+glBindVertexArray(0);
+
+Code snippet – textured quad
+// Vertex data: positions + texture coords
+float vertices[] = {
+    // x      y       u    v
+    -0.5f, -0.5f,   0.0f, 0.0f,
+     0.5f, -0.5f,   1.0f, 0.0f,
+     0.5f,  0.5f,   1.0f, 1.0f,
+    -0.5f,  0.5f,   0.0f, 1.0f
+};
+unsigned int indices[] = {
+    0,1,2,
+    2,3,0
+};
+
+// Setup would include glVertexAttribPointer for (u,v) as second attribute
+// Also load texture, bind it, set shader uniform sampler2D
+
+// Rendering
+shader.use();
+glActiveTexture(GL_TEXTURE0);
+glBindTexture(GL_TEXTURE_2D, textureID);
+shader.setInt("texture1", 0);
+
+glBindVertexArray(VAO);
+glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+glBindVertexArray(0);
+
+Where/when use
+
+Use at initialization to set up VAO/VBO/EBO and load texture(s).
+
+Each frame, for each object you render: bind texture (if needed), set up transformations (see next section), then draw.
+
+If object has no texture (e.g., a debug box or placeholder platform), skip texture bind and just draw the solid variant.
+
+2. Transformations: move, rotate, scale
+How & why
+
+With 2D platformer, you’ll want to position objects in world space, scale them (for size variants) and possibly rotate them (e.g., tilting platforms or coins).
+
+Using matrices (model/view/projection) gives you flexibility.
+
+Transformation order matters: as multiple sources note, scaling → rotation → translation is typical so you don’t end up scaling or rotating the translation vector itself. 
+Learn OpenGL
+ 
+Khronos Forums
++1
+
+Code snippet (using GLM)
+// Assume glm is available (#include <glm/glm.hpp>, <glm/gtc/matrix_transform.hpp>, <glm/gtc/type_ptr.hpp>)
+
+glm::vec2 position = glm::vec2(xPos, yPos);
+float rotationInDegrees = angle;
+glm::vec2 scale = glm::vec2(scaleX, scaleY);
+
+// Build model matrix
+glm::mat4 model = glm::mat4(1.0f);
+
+// 1. Translate
+model = glm::translate(model, glm::vec3(position, 0.0f));
+// 2. Rotate (around Z axis for 2D)
+model = glm::rotate(model, glm::radians(rotationInDegrees), glm::vec3(0.0f, 0.0f, 1.0f));
+// 3. Scale
+model = glm::scale(model, glm::vec3(scale, 1.0f));
+
+// Send to shader as uniform
+unsigned int modelLoc = glGetUniformLocation(shader.ID, "model");
+glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+
+// Then render as above
+
+Explanation of order
+
+Translate last in this snippet — this is fine because the operations above operate before translation. Some sources recommend scale → rotate → translate. 
+Learn OpenGL
++1
+
+If you translated first, then scaled, your translation would also scale (undesirable).
+
+If you rotate first and then translate, you might get the object placed at unexpected location because rotation changes axes orientation.
+
+Example: If you want to rotate around object’s centre, you might translate to origin, rotate, then translate back; or ensure object’s origin is its centre.
+
+Where/when use
+
+Use when rendering each object: compute its current position/rotation/scale based on game logic (movement, animation etc).
+
+Use whenever object size or orientation changes (e.g., power-up makes them larger, platform tilts, enemy spin).
+
+For a side-platformer: player and enemies will have moving positions; platforms may scale or rotate; props may scale; so this technique applies widely.
+
+3. Movement / applying physics in 2D
+How & why
+
+Movement: update object position each frame based on velocity, acceleration (gravity) and user input.
+
+Why: For platformer you’ll have horizontal movement, jumping (vertical velocity/acceleration), and might rotate or scale objects dynamically.
+
+You may integrate this into your object class logic.
+
+Code snippet
+struct Entity {
+    glm::vec2 position;
+    glm::vec2 velocity;
+    glm::vec2 scale = glm::vec2(1.0f);
+    float rotation = 0.0f; // degrees
+
+    void update(float deltaTime) {
+        // Apply gravity (for player or falling objects)
+        const glm::vec2 gravity = glm::vec2(0.0f, -9.8f);
+        velocity += gravity * deltaTime;
+
+        // Apply velocity
+        position += velocity * deltaTime;
+
+        // Clamp or apply ground collision, etc.
+    }
+
+    void render(Shader &shader, unsigned int VAO) {
+        // build model matrix as above using position, rotation, scale
+        glm::mat4 model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(position, 0.0f));
+        model = glm::rotate(model, glm::radians(rotation), glm::vec3(0.0f,0.0f,1.0f));
+        model = glm::scale(model, glm::vec3(scale,1.0f));
+        glUniformMatrix4fv(glGetUniformLocation(shader.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
+
+        glBindVertexArray(VAO);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        glBindVertexArray(0);
+    }
+};
+
+Where/when use
+
+In your game loop: update() called before rendering; you pass deltaTime = time since last frame for smooth movement.
+
+Handle input (e.g., left/right keys adjust velocity.x; jump sets velocity.y) outside or inside update().
+
+After movement, you’ll check collisions (next section) and adjust position/velocity if needed.
+
+4. Basic 2D Collision Detection (Axis-Aligned Bounding Box)
+How & why
+
+In a side-platformer, simplest and very common collision detection is rectangle vs rectangle (axis aligned) — i.e., bounding boxes around sprites. 
+MDN Web Docs
++2
+Learn OpenGL
++2
+
+Why: It’s fast, easy to implement, adequate for many tile/platform games where objects don’t rotate or if rotation is minimal.
+
+You define each entity’s bounding box (x, y, width, height) and check overlap.
+
+Code snippet
+struct AABB {
+    float x, y;        // bottom-left corner (or whichever convention)
+    float width, height;
+
+    bool intersects(const AABB &other) const {
+        return (x < other.x + other.width &&
+                x + width > other.x &&
+                y < other.y + other.height &&
+                y + height > other.y);
+    }
+};
+
+// Usage:
+AABB playerBox { player.position.x, player.position.y, playerWidth, playerHeight };
+AABB platformBox { plat.position.x, plat.position.y, platWidth, platHeight };
+
+if (playerBox.intersects(platformBox)) {
+    // collision happened — handle response
+}
+
+Response / resolution example
+if (playerBox.intersects(platformBox)) {
+    // Simple example: stop vertical velocity and set player on top of platform
+    player.velocity.y = 0.0f;
+    player.position.y = platformBox.y + platformBox.height;
+}
+
+Notes / caveats
+
+This method assumes bounding boxes are axis-aligned (no rotation) — if you rotate objects, you’ll need oriented bounding boxes (OBB) or other methods. 
+Game Development Stack Exchange
++1
+
+For better performance when many objects: use a “broad phase” first (e.g., spatial partitioning, grid/quadtree) then “narrow phase”. 
+MDN Web Docs
+
+Resolving collisions properly (especially when player is moving fast, enters corner, jumps, falls, etc) can be tricky; you might need to separate axis overlap, check penetration depth, then adjust position accordingly. 
+Benpm
++1
+
+Where/when use
+
+Use after you update entity positions each frame (but before you render) to detect overlaps with static platforms, enemies, hazards.
+
+Use bounding box checks for initial tests; when collision detected, perform response (stop movement, bounce, slide, etc).
+
+For moving platforms: update platform position first, then check collisions.
+
+For objects with rotation or non-axis aligned geometry you would extend to OBB or SAT (Separating Axis Theorem) methods.
+
+5. Putting it all together – simple side-platformer main loop
+
+Here’s an annotated pseudo / C++ style combination to show how the parts fit:
+
+// Setup: load shaders, load textures, set up VAO/VBO, create entities/platforms...
+
+float lastTime = glfwGetTime();
+
+while (!glfwWindowShouldClose(window)) {
+    float currentTime = glfwGetTime();
+    float deltaTime = currentTime - lastTime;
+    lastTime = currentTime;
+
+    // Input: e.g., check left/right/jump keys, update player.velocity.x and player.velocity.y accordingly
+
+    // Update physics/movement
+    player.update(deltaTime);
+    for (auto &enemy : enemies) {
+       enemy.update(deltaTime);
+    }
+    // (platforms may be static or moving)
+    
+    // Collision detection & response
+    for (auto &plat : platforms) {
+        AABB playerBox { player.position.x, player.position.y, playerWidth, playerHeight };
+        AABB platBox  { plat.position.x,  plat.position.y,  platWidth,  platHeight };
+        if (playerBox.intersects(platBox)) {
+            // simple example: if falling and hit top of platform
+            if (player.velocity.y < 0) {
+                player.velocity.y = 0;
+                player.position.y = platBox.y + platBox.height;
+                player.onGround = true;
+            }
+        }
+    }
+
+    // Rendering
+    glClear(GL_COLOR_BUFFER_BIT);
+    
+    player.render(shader, VAO);
+    for (auto &plat : platforms) {
+        plat.render(shader, VAO);
+    }
+
+    glfwSwapBuffers(window);
+    glfwPollEvents();
+}
+
+6. Additional considerations & advanced tips
+
+If you rotate or scale objects in collision world space, axis‐aligned bounding boxes may no longer suffice; you will need oriented bounding boxes or more advanced techniques.
+
+Order of transforms: good to stick to a consistent convention. Many tutorials recommend scale → rotate → translate. 
+Learn OpenGL
++1
+
+For smoother movement / physics: apply acceleration, friction, and use consistent deltaTime.
+
+For multiple collisions (player touches two platforms at once) or edge cases (corner collisions), you might need separate checks for horizontal vs vertical movement (e.g., sweep test) or adjust in two phases (vertical then horizontal) to avoid “sticking” or “jitter”.
+
+For sprite flipping (facing left vs right) just scale X by −1 or choose different texture.
+
+For texture atlases / sprite sheets: use texture coordinates accordingly.
+
+Debug: drawing collision bounding boxes (lines) helps to visualize where hits occur.
+
+=================================================================================
+
+
+
+=================================================================================
+=================================================================================
+=================================================================================
+
+
+
+=================================================================================
+
+🧱 Project Summary
+
+You’ll learn how to:
+
+Initialize a window with GLFW
+
+Draw 2D rectangles using OpenGL
+
+Move the player using input
+
+Detect and resolve collisions with the ground
+
+🧩 Example Code
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
+#include <iostream>
+
+struct Vec2 {
+    float x, y;
+};
+
+struct Rect {
+    Vec2 pos;
+    Vec2 size;
+};
+
+bool CheckCollision(const Rect& a, const Rect& b) {
+    return (a.pos.x < b.pos.x + b.size.x &&
+            a.pos.x + a.size.x > b.pos.x &&
+            a.pos.y < b.pos.y + b.size.y &&
+            a.pos.y + a.size.y > b.pos.y);
+}
+
+void DrawRect(const Rect& r, float rColor, float gColor, float bColor) {
+    glColor3f(rColor, gColor, bColor);
+    glBegin(GL_QUADS);
+    glVertex2f(r.pos.x, r.pos.y);
+    glVertex2f(r.pos.x + r.size.x, r.pos.y);
+    glVertex2f(r.pos.x + r.size.x, r.pos.y + r.size.y);
+    glVertex2f(r.pos.x, r.pos.y + r.size.y);
+    glEnd();
+}
+
+int main() {
+    if (!glfwInit()) {
+        std::cerr << "Failed to initialize GLFW\n";
+        return -1;
+    }
+
+    GLFWwindow* window = glfwCreateWindow(800, 600, "2D Platformer Example", NULL, NULL);
+    if (!window) {
+        glfwTerminate();
+        std::cerr << "Failed to create window\n";
+        return -1;
+    }
+
+    glfwMakeContextCurrent(window);
+    gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
+
+    // World setup
+    Rect ground = {{-1.0f, -0.9f}, {2.0f, 0.2f}};  // Static ground
+    Rect player = {{-0.05f, -0.5f}, {0.1f, 0.1f}}; // Small player
+
+    Vec2 velocity = {0.0f, 0.0f};
+    float gravity = -0.0025f;
+    bool grounded = false;
+
+    while (!glfwWindowShouldClose(window)) {
+        glfwPollEvents();
+
+        // Movement
+        if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
+            player.pos.x -= 0.01f;
+        if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
+            player.pos.x += 0.01f;
+        if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && grounded)
+            velocity.y = 0.05f; // Jump
+
+        // Gravity
+        velocity.y += gravity;
+        player.pos.y += velocity.y;
+
+        // Collision
+        if (CheckCollision(player, ground)) {
+            player.pos.y = ground.pos.y + ground.size.y; // Snap player to ground
+            velocity.y = 0;
+            grounded = true;
+        } else {
+            grounded = false;
+        }
+
+        // Rendering
+        glClear(GL_COLOR_BUFFER_BIT);
+        glLoadIdentity();
+
+        DrawRect(ground, 0.2f, 0.8f, 0.3f);  // green ground
+        DrawRect(player, 0.8f, 0.2f, 0.2f);  // red player
+
+        glfwSwapBuffers(window);
+    }
+
+    glfwTerminate();
+    return 0;
+}
+
+🧠 Breakdown
+Concept	Explanation
+AABB Collision	Checks overlap in X and Y between player and ground. Simple and fast.
+Gravity	A constant downward velocity applied each frame.
+Grounded Flag	Prevents infinite jumping.
+Position Snapping	After collision, player is placed right on top of the ground.
+Immediate Mode OpenGL	Used here for simplicity (glBegin / glEnd). For real projects, switch to shaders and VBOs.
+⚙️ When to Use
+
+Use this base when prototyping 2D physics, movement, and collision quickly.
+
+Later, move toward:
+
+Modern OpenGL rendering (VBOs/VAOs, shaders)
+
+Physics engine (like Box2D)
+
+Texture rendering with glBindTexture and UV coordinates.
+
+🌄 Optional: Add Texture
+
+If you have a loaded texture (say via stb_image), you can modify DrawRect to bind and draw it:
+
+glEnable(GL_TEXTURE_2D);
+glBindTexture(GL_TEXTURE_2D, textureID);
+glBegin(GL_QUADS);
+glTexCoord2f(0,0); glVertex2f(r.pos.x, r.pos.y);
+glTexCoord2f(1,0); glVertex2f(r.pos.x + r.size.x, r.pos.y);
+glTexCoord2f(1,1); glVertex2f(r.pos.x + r.size.x, r.pos.y + r.size.y);
+glTexCoord2f(0,1); glVertex2f(r.pos.x, r.pos.y + r.size.y);
+glEnd();
+glDisable(GL_TEXTURE_2D);

@@ -10,7 +10,6 @@ void updatePlayerMovement(rect& player, GLFWwindow* window, float dt)
 
     // Move The Player
     player.pos.x += player.velocity.x * dt;
-    player.pos.y += player.velocity.y * dt;
 
 
     if (player.rotation >= 360 ^ player.rotation <= -360) {
@@ -18,7 +17,6 @@ void updatePlayerMovement(rect& player, GLFWwindow* window, float dt)
     }
 
     const float speed = 20.0f;
-    float gravity = -9.8f;
 
 
         if (player.pos.y = ground.pos.y + ground.size.y / 2) {
@@ -50,11 +48,14 @@ void updatePlayerMovement(rect& player, GLFWwindow* window, float dt)
         //player.rotation += 1.0f;
     }
 
+    /*
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && grounded == true) {
         player.velocity.y = 5.0f;
         grounded == false;
-        
     }
+
+    I think we'll handle jumping within the main file so variables are updated correctly
+    */
 
     if (player.velocity.y > 0 && grounded == false) {
         player.velocity.y -= 0.05f * dt;

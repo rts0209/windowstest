@@ -253,6 +253,12 @@ int main(void) {
 
          updatePlayerMovement(player, window, dt);
 
+        player.pos.y += velocity.y * dt;
+
+        if (velocity.y > 0) {
+            velocity.y * gravity;
+        }
+
 
             if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
                 //printf("ESC pressed, exiting...\n");
@@ -260,6 +266,7 @@ int main(void) {
                 return -1;
             }
 
+            
             if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
                 menu_bool = true;
                 //printf("E pressed, opening menu...\n");
@@ -294,24 +301,99 @@ int main(void) {
 
 
 
-    // this section is forcing the cube to stick to the ground so it can't jump.
-        float groundTopY = ground.pos.y + ground.size.y;
+    // This section is forcing the cube to stick to the ground so it can't jump.
+    // So how the hell do I fix this?
+    // Can't use an if grounded statement since there's an else grounded in there.
+    // When I disabled plyr.pos.y += pen; the player's top got stuck under ground?
+    // So maybe I should track the bottom verticies instead of the top left?
+    // Honestly how the hell should I do this? I do want it so if a box is a little off the edge on top
+    // it falls and then tips over. That'd be nice. But in the mean time, I need to fix this stupid bug
+    // Because this line is breaking it "player.pos.y += penetration;", maybe delete it or find a new approach
+    // To execute the same code? I really should do this based off of the bottom 2 verticies.
+    //
+    //
+    //
+    //
+
+        
+
+
+
+    // Only check for ground collision when the player is MOVING DOWN
+    /*
+        if (velocity.y < 0.0f) 
+            {
+            if (lowest.y < groundTopY)
+            {
+                float penetration = groundTopY - lowest.y;
+
+                // Correct position (landing)
+                player.pos.y += penetration;
+
+                // Stop falling
+                velocity.y = 0.0f;
+                grounded = true;
+            }
+        else 
+            {
+                grounded = false;
+        }
+    }
+    */
+
+    float groundTopY = ground.pos.y + ground.size.y;
+    float playerBottomY = player.pos.y + player.size.y;
 
         Vec2 corners[4];
         Vec2 lowest;
         int idx = FindLowestVertex(player, corners, lowest);
-        if (lowest.y < groundTopY) {
-            float penetration = groundTopY - lowest.y;
-            // push player up by penetration (note: if pos is top-left, push pos.y up)
-            player.pos.y += penetration;
+        float penetration = groundTopY - lowest.y;
+        // maybe rewrite this float section of code?
 
-            // zero vertical velocity and mark grounded
-            velocity.y = 0.0f;
-            grounded = true;
-     } else {
-            grounded = false;
+
+
+    if (player.rotation = 0) {
+        if (velocity.y = 0.0f) {
+            if (lowest.y < groundTopY) {
+        
+                player.pos.y += penetration;
+
+                velocity.y = 0.0f;
+                grounded = true;
+            }
+                else {
+                    grounded = false;
+                }
         }
-    
+    }
+        else {
+            if (velocity.y < 0.0f) {
+                player.pos.y += penetration;
+                velocity.y = 0.0f;
+                grounded = true;
+            }
+        }
+
+    if (player.pos.y > ground.pos.y) {
+        grounded = false;
+        }
+
+    if (player.pos.y = ground.pos.y + (ground.size.y / 2)) {
+        velocity.y = 0.0f;
+        grounded = true;
+        player.pos.y = player.pos.  y + (ground.size.y / 2);
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && grounded == true) {
+        player.pos.y = groundTopY + playerBottomY;
+        velocity.y += 0.3f;
+        grounded = false;
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS) {
+        printf("%.f\n", velocity.y);
+        //printf("%.f\n", velocity.x);
+    }
 
 
         if(glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) {
@@ -332,8 +414,8 @@ int main(void) {
         glClear(GL_COLOR_BUFFER_BIT);
         glLoadIdentity();
 
-        DrawRect(ground, 0.2f, 0.9f, 0.3f);  // green ground
-        DrawRect(player, 0.8f, 0.2f, 0.2f);  // red player   
+        DrawRect(ground, 0.2f, 0.9f, 0.3f);  // green ground    
+        DrawRect(player, 0.8f, 0.2f, 0.2f);  // red player  
         if (box_spawned == true) {
             DrawRect(box, 0.2f, 0.2f, 0.8f);
         }   // blue box

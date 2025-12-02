@@ -13,17 +13,9 @@
 
 rect player;
 
-int wwidth, hheight;
-float red;
-float green;
-float blue;
 int height = 32;
 int width = 32;
 int pixels = width * height;
-bool menu_bool = false;
-bool menu_timeout = false;
-bool box_spawned = false;
-bool can_move = true;
 bool start_vertex = false;
 
 bool CheckCollision(const rect& a, const rect& b) {
@@ -164,9 +156,6 @@ int main(void) {
     player.rotation = 0;
 
     printf("Starting program...\n");
-    red = 0.1f;
-    green = 0.3f;
-    blue = 0.7f;
 
     GLFWwindow* window;
 
@@ -192,15 +181,10 @@ int main(void) {
     rect ground = {{-1.0f, -0.9f}, {2.0f, 0.2f}};
     rect player = {{-0.05f, -0.5f}, {0.1f, 0.1f}};
     rect menu = {{-0.3f, -0.3f}, {0.6f, 0.6f}};
-    rect box = {{0.1f, -0.1f}, {0.1f, 0.1f}};
-    rect seal = {{0.7f, 0.7f}, {0.3f, 0.1f}};
 
-
-    box.rotation = 0;
     player.rotation = 0;
 
     Vec2 velocity = {0.0f, 0.0f};
-    Vec2 box_velocity = {0.0f, 0.0f};
     Vec2 seal_velocity = {0.0f, 0.0f};
     const float gravity = -0.002f;
 
@@ -253,12 +237,6 @@ int main(void) {
 
          updatePlayerMovement(player, window, dt);
 
-        player.pos.y += velocity.y * dt;
-
-        if (velocity.y > 0) {
-            velocity.y * gravity;
-        }
-
 
             if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
                 //printf("ESC pressed, exiting...\n");
@@ -266,38 +244,8 @@ int main(void) {
                 return -1;
             }
 
-            
-            if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
-                menu_bool = true;
-                //printf("E pressed, opening menu...\n");
-                menu.pos.x = -0.95f;
-                menu.pos.y = -0.35f;
-                menu.size.y = 1.25f;
-                printf("%.2f\n", box.pos.x);
-                printf("%.2f\n", box.pos.y);
-            }
-
-        if (menu_bool) {
-            // Render menu
-            glClear(GL_COLOR_BUFFER_BIT);
-            glLoadIdentity();
-            DrawRect(menu, 0.5f, 0.5f, 0.5f);
-            DrawRect(ground, 0.2f, 0.9f, 0.3f);
-            DrawRect(player, 0.8f, 0.2f, 0.2f); 
-        //  DrawRect(seal, 0.4f, 0.9f, 0.4f); Example Draw 
-
-
-            glfwSwapBuffers(window);
-            glfwPollEvents();
-
-                if(glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS && menu_bool == true) {
-                    //printf("Q pressed, closing menu...\n");
-                    menu_bool = false;
-            
-        }
-
-            continue; // Skip rest of loop
-    }
+            //continue; // Skip rest of loop
+    
 
 
 
@@ -315,31 +263,8 @@ int main(void) {
     //
     //
 
-        
-
-
 
     // Only check for ground collision when the player is MOVING DOWN
-    /*
-        if (velocity.y < 0.0f) 
-            {
-            if (lowest.y < groundTopY)
-            {
-                float penetration = groundTopY - lowest.y;
-
-                // Correct position (landing)
-                player.pos.y += penetration;
-
-                // Stop falling
-                velocity.y = 0.0f;
-                grounded = true;
-            }
-        else 
-            {
-                grounded = false;
-        }
-    }
-    */
 
     float groundTopY = ground.pos.y + ground.size.y;
     float playerBottomY = player.pos.y + player.size.y;
@@ -351,8 +276,6 @@ int main(void) {
         // maybe rewrite this float section of code?
 
 
-
-    if (player.rotation = 0) {
         if (velocity.y = 0.0f) {
             if (lowest.y < groundTopY) {
         
@@ -365,7 +288,6 @@ int main(void) {
                     grounded = false;
                 }
         }
-    }
         else {
             if (velocity.y < 0.0f) {
                 player.pos.y += penetration;
@@ -384,30 +306,14 @@ int main(void) {
         player.pos.y = player.pos.  y + (ground.size.y / 2);
     }
 
-    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && grounded == true) {
-        player.pos.y = groundTopY + playerBottomY;
-        velocity.y += 0.3f;
-        grounded = false;
-    }
-
-    if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS) {
-        printf("%.f\n", velocity.y);
-        //printf("%.f\n", velocity.x);
-    }
-
 
         if(glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) {
             // Reset Player and Box
             player.pos.x = -0.05f;
             player.pos.y = -0.5f;
+            player.rotation = 0.0f;
             velocity.x = 0;
             velocity.y = 0;
-            box.pos.x = 0.3f;
-            box.pos.y = -0.1f;
-            box_velocity.x = 0;
-            box_velocity.y = 0;
-            box_spawned = false;
-            can_move = true;
         }
 
         // Rendering
@@ -416,14 +322,6 @@ int main(void) {
 
         DrawRect(ground, 0.2f, 0.9f, 0.3f);  // green ground    
         DrawRect(player, 0.8f, 0.2f, 0.2f);  // red player  
-        if (box_spawned == true) {
-            DrawRect(box, 0.2f, 0.2f, 0.8f);
-        }   // blue box
-        if (seal_spawned == true) {
-                DrawRect(seal, 0.44f, 0.44f, 0.4f);
-            }
-
-        
 
         glfwSwapBuffers(window);
         }

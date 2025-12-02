@@ -5,8 +5,6 @@
 
 void updatePlayerMovement(rect& player, GLFWwindow* window, float dt)
 {
-    rect ground = {{-1.0f, -0.9f}, {2.0f, 0.2f}};
-    bool grounded = false;
 
     // Move The Player
     player.pos.x += player.velocity.x * dt;
@@ -17,14 +15,6 @@ void updatePlayerMovement(rect& player, GLFWwindow* window, float dt)
     }
 
     const float speed = 20.0f;
-
-
-        if (player.pos.y = ground.pos.y + ground.size.y / 2) {
-            grounded = true;
-        }
-        else {
-            grounded = false;
-        }
 
 
     if (player.velocity.x > 1.5 ^ player.velocity.x < -1.5) {
@@ -48,16 +38,24 @@ void updatePlayerMovement(rect& player, GLFWwindow* window, float dt)
         //player.rotation += 1.0f;
     }
 
+    if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
+        player.rotation += 1.0f;
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
+        player.rotation -= 1.0f;
+    }
+
     /*
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && grounded == true) {
         player.velocity.y = 5.0f;
         grounded == false;
     }
 
-    I think we'll handle jumping within the main file so variables are updated correctly
+    I think we'll handle jumping within the main file so variables are updated correctly, no
     */
 
-    if (player.velocity.y > 0 && grounded == false) {
+    if (player.velocity.y > 0) {
         player.velocity.y -= 0.05f * dt;
     }
 
@@ -67,6 +65,15 @@ void updatePlayerMovement(rect& player, GLFWwindow* window, float dt)
 
     if (player.velocity.x < 0) {
         player.velocity.x += dt * 2.75f;
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS == true) {
+        player.velocity.y = dt * 0.3f;
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS) {
+    printf("%.f\n", player.velocity.y);
+        //printf("%.f\n", velocity.x);
     }
 }
 

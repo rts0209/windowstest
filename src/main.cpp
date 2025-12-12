@@ -8,10 +8,11 @@
 #include <iostream>
 #include <cmath>
 #include "player_movement.h"
+#include "collision_handler.h"
+#include "game_state.h"
+#include "input_handler.h"
 
 
-
-rect player;
 
 int height = 32;
 int width = 32;
@@ -89,8 +90,10 @@ void DrawRect(const rect& r, float r_col, float g_col, float b_col) {
 
 // DISABLE FOR NOW UNTIL I REDO THE FUCKING COLLISION
 // !!!! WRITE A COLLISON CODE USING THE CODE AND ARRAYS YOU IDIOT !!!!
-//*
+/*
     
+
+
 
     void GetCorners_TopLeftPos(const rect &a, Vec2 outCorners[4]) {
 
@@ -145,15 +148,11 @@ void DrawRect(const rect& r, float r_col, float g_col, float b_col) {
     return lowestIdx;
 }
 
-//*
+*/
 
 int main(void) {
     glfwSwapInterval(1); // Enable VSync
     glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
-
-    player.pos = {0, 0};
-    player.size = {50, 50};
-    player.rotation = 0;
 
     printf("Starting program...\n");
 
@@ -166,7 +165,7 @@ int main(void) {
     }
 
     printf("Creating window...\n");
-    window = glfwCreateWindow(1200, 1200, "Hello World✔ ", NULL, NULL);
+    window = glfwCreateWindow(1200, 1200, "Huh. ", NULL, NULL);
     if (!window) {
         printf("Window creation failed!\n");
         glfwTerminate();
@@ -178,26 +177,9 @@ int main(void) {
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 
     // World Setup
-    rect ground = {{-1.0f, -0.9f}, {2.0f, 0.2f}};
-    rect player = {{-0.05f, -0.5f}, {0.1f, 0.1f}};
-    rect menu = {{-0.3f, -0.3f}, {0.6f, 0.6f}};
-
-    player.rotation = 0;
-
-    Vec2 velocity = {0.0f, 0.0f};
-    Vec2 seal_velocity = {0.0f, 0.0f};
-    const float gravity = -0.002f;
-
-    bool grounded = false;
-    bool box_grounded = false;
-    bool on_box = false;
-    bool on_player = false;
-    bool seal_spawned = false;
-
-    float cx = player.pos.x + player.size.x * 0.5f;
-    float cy = player.pos.y + player.size.y * 0.5f;
-
- 
+    ground.pos = {-1.0f, -0.9f};
+    ground.size = {2.0f, 0.2f};
+     
     printf("Initializing GLAD...\n");
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         printf("GLAD load failed!\n");
@@ -207,7 +189,7 @@ int main(void) {
 
     printf("Loading icon...\n");
     int icon_width, icon_height, icon_channels;
-    unsigned char* icon_pixels = stbi_load("C:/Users/nismo/Downloads/asdwasd.jfif", &icon_width, &icon_height, &icon_channels, 4);  // Changed to relative path
+    unsigned char* icon_pixels = stbi_load("C:/Users/nismo/Downloads/alan-bowe-jjk.gif", &icon_width, &icon_height, &icon_channels, 4);  // Changed to relative path
     if (!icon_pixels) {
         printf("Icon load failed! STB Error: %s\n", stbi_failure_reason());  // More debug info
         printf("Continuing without icon...\n");
@@ -221,6 +203,8 @@ int main(void) {
         stbi_image_free(icon_pixels);  // Free immediately after setting
     }
 
+    
+
 
 //  ------------------------------------------------------------------------------------------------------------
     printf("Entering main loop...\n");
@@ -229,15 +213,26 @@ int main(void) {
     printf("%.f\n", lastTime);
 
     while (!glfwWindowShouldClose(window)) {
+        
+
         double now = glfwGetTime();
         float dt = float(now - lastTime);
         lastTime = now;
 
-         glfwPollEvents();
+        player_movements(player, window, dt);
+        
+        Update_Player(player, window, dt);
 
-         updatePlayerMovement(player, window, dt);
+        Gravity(dt);
 
+        CheckForGround(player, window, dt);
 
+        CheckForGroundWhilstFalling();
+
+        glfwPollEvents();
+
+        
+        
             if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
                 //printf("ESC pressed, exiting...\n");
                 glfwTerminate();
@@ -249,7 +244,7 @@ int main(void) {
 
 
 
-    // This section is forcing the cube to stick to the ground so it can't jump.
+    /* This section is forcing the cube to stick to the ground so it can't jump.
     // So how the hell do I fix this?
     // Can't use an if grounded statement since there's an else grounded in there.
     // When I disabled plyr.pos.y += pen; the player's top got stuck under ground?
@@ -262,13 +257,15 @@ int main(void) {
     //
     //
     //
+    */
 
 
     // Only check for ground collision when the player is MOVING DOWN
 
-    float groundTopY = ground.pos.y + ground.size.y;
-    float playerBottomY = player.pos.y + player.size.y;
+    //float groundTopY = ground.pos.y + ground.size.y;
+    //float playerBottomY = player.pos.y + player.size.y;
 
+    /*
         Vec2 corners[4];
         Vec2 lowest;
         int idx = FindLowestVertex(player, corners, lowest);
@@ -306,15 +303,21 @@ int main(void) {
         player.pos.y = player.pos.  y + (ground.size.y / 2);
     }
 
+    */
+    
 
         if(glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) {
+            // PUT THIS IN INPUT MANAGER!!!
+
             // Reset Player and Box
-            player.pos.x = -0.05f;
-            player.pos.y = -0.5f;
+            player.pos.x = -0.0f;
+            player.pos.y = 0.2f;
             player.rotation = 0.0f;
-            velocity.x = 0;
-            velocity.y = 0;
+            player.velocity.x = 0;
+            player.velocity.y = 0;
+            is_grounded = false;
         }
+    
 
         // Rendering
         glClear(GL_COLOR_BUFFER_BIT);

@@ -1,3 +1,0 @@
-@echo off
-echo Running Game...
-start "" "Program.exe"

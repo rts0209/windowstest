@@ -1,5 +1,5 @@
 #pragma once
-#include "rect.h"
+#include "game_state.h"
 #include <GLFW/glfw3.h>
 
-void updatePlayerMovement(rect& player, GLFWwindow* window, float dt);
+void Update_Player(rect& player, GLFWwindow* window, float dt);

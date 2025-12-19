@@ -219,15 +219,13 @@ int main(void) {
         float dt = float(now - lastTime);
         lastTime = now;
 
-        player_movements(player, window, dt);
+        Handle_input(player, window);
+
+        Apply_Gravity(dt);
         
-        Update_Player(player, window, dt);
+        Integrate_Movement(player, dt);
 
-        Gravity(dt);
-
-        CheckForGround(player, window, dt);
-
-        CheckForGroundWhilstFalling();
+        ResolveGroundCollision(player);
 
         glfwPollEvents();
 

@@ -2,4 +2,4 @@
 #include "game_state.h"
 #include <GLFW/glfw3.h>
 
-void Update_Player(rect& player, GLFWwindow* window, float dt);
+void Integrate_Movement(rect& player, float dt);

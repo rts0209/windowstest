@@ -5,55 +5,22 @@
 
 // ✅ ONLY place these functions exist
 
-void CheckForGround(rect& player, GLFWwindow* window, float dt) {
-    if (is_jumping == false) {
-        float real_ground_height = ground.pos.y + (ground.size.y / 2);
+void ResolveGroundCollision(rect& player) {
+    float groundTop = ground.pos.y + ground.size.y / 2.0f;
+    float playerBottom = player.pos.y - player.size.y;
 
-        printf("Player.pos.y is %.3f\n", player.pos.y);
-
-        printf("Actual top starts at %.3f\n", real_ground_height);
-        if (player.pos.y = ground.pos.y + (ground.size.y / 2) + (player.size.y)) {
-            player.pos.y = ground.pos.y + (ground.size.y / 2)   + (player.size.y);
-            player.velocity.y = 0.0f;
-            is_grounded = true;
-            if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
-                is_jumping = true;
-                is_grounded = false;
-                player.velocity.y = 35.0f * dt; 
-            }
-            
-            
-        }
-        if (player.pos.y + player.size.y / 2 > ground.pos.y + (ground.size.y / 2) + (player.size.y)) {
-            is_grounded = false;
-            is_jumping = true;
-        }
+    // Only collide if falling
+    if (playerBottom <= groundTop && player.velocity.y <= 0.0f) {
+        player.pos.y = groundTop + player.size.y;
+        player.velocity.y = 0.0f;
+        is_grounded = true;
     }
 }
 
-void CheckForGroundWhilstFalling() {
-    if (is_jumping == true) {
-        if (player.pos.y = ground.pos.y + (ground.size.y / 2) + (player.size.y)) {
-            is_grounded = true;
-            is_jumping = false;
-        }
-        /*
-        if (player.pos.y < ground.pos.y + (ground.size.y / 2) + (player.size.y)) {
-            player.pos.y = ground.pos.y + (ground.size.y / 2) + (player.size.y);
-            is_grounded = true;
-            is_jumping = false;
-        }
-        */
-        if (player.pos.y > ground.pos.y + (ground.size.y / 2) + (player.size.y)) {
-            is_grounded = false;
-            is_jumping = true;
-        }
-    }
-}
+void Apply_Gravity(float dt) {
+    const float gravity = -1.5f;
 
-void Gravity(float dt) {
-    const float gravity = -0.98;
-    if (is_grounded == false) {
+    if (!is_grounded) {
         player.velocity.y += gravity * dt;
     }
 }

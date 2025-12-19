@@ -3,9 +3,7 @@
 #include "game_state.h"
 #include <GLFW/glfw3.h>
 
-void GroundCollision();
-void CheckForGround(rect& player, GLFWwindow* window, float dt);
-void Gravity(float dt);
-void CheckForGroundWhilstFalling();
+void ResolveGroundCollision(rect& player);
+void Apply_Gravity(float dt);
 
 #endif

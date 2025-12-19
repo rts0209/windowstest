@@ -1,28 +1,36 @@
 #include "input_handler.h"
 #include "game_state.h"
 #include <GLFW/glfw3.h>
-#include <cstdio>
 
-void player_movements(rect& player, GLFWwindow* window, float dt) {
+void Handle_input(rect& player, GLFWwindow* window) {
+    const float move_speed = 2.0f;
+    const float jump_force = 1.25f;
+
     
-    const float speed = 3.0f;
-    const float jump_strength = 15.0f;
-
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-        player.velocity.x += speed * dt;
-        printf("5%.f\n", player.velocity.x);
+        player.velocity.x += 0.005f;
     }
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-        player.velocity.x -= speed * dt;
-        printf("5%.f\n", player.velocity.x);
+    else if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+        player.velocity.x -= 0.005f;
     }
-    /*
-    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && is_grounded == true) {
-        player.velocity.y = jump_strength * dt;
-        is_jumping = true;
-        printf("Player Velocity: %.f\n", player.velocity.y);
-        printf("Jumping?: %.i\n", is_jumping);
-        
+    else if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
+        player.rotation += 0.05f;
     }
-    */
+    else {
+        player.velocity.x = 0.0f;
+    }
+
+    if (player.velocity.x > move_speed) {
+        player.velocity.x = move_speed;
+    }
+
+    if (player.velocity.x < -move_speed) {
+        player.velocity.x = -move_speed;
+    }
+
+    // Jump (ONLY when grounded)
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && is_grounded) {
+        player.velocity.y = jump_force;
+        is_grounded = false;
+    }
 }

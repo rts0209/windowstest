@@ -3,6 +3,7 @@
 #include <GLFW/glfw3.h>
 #include <cstdio>
 
+
 // ✅ ONLY place these functions exist
 
 void ResolveGroundCollision(rect& player) {

@@ -1,21 +1,32 @@
 #include "input_handler.h"
 #include "game_state.h"
 #include <GLFW/glfw3.h>
+#include <cstdio>
 
 void Handle_input(rect& player, GLFWwindow* window) {
     const float move_speed = 2.0f;
     const float jump_force = 1.25f;
 
-    
+    if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
+        if (menu_opened == false) {
+            printf("Opening Menu\n");
+            menu_opened = true;
+        }
+        else {
+            printf("Closing Menu\n");
+            menu_opened = false;
+        }
+        
+    }
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
         player.velocity.x += 0.005f;
     }
     else if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
         player.velocity.x -= 0.005f;
     }
-    else if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
-        player.rotation += 0.05f;
-    }
+    //else if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
+    //    player.rotation += 0.05f;
+    //}
     else {
         player.velocity.x = 0.0f;
     }

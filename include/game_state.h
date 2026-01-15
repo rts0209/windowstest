@@ -23,9 +23,11 @@ struct rect {
 // =======================
 extern rect player;
 extern rect ground;
+extern rect menu;
 
 extern bool is_grounded;
 extern bool is_jumping;
+extern bool menu_opened;
 extern float delta_time;
 
 #endif

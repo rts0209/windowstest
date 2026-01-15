@@ -11,6 +11,7 @@
 #include "collision_handler.h"
 #include "game_state.h"
 #include "input_handler.h"
+#include "menu_handler.h"
 
 
 
@@ -323,6 +324,10 @@ int main(void) {
 
         DrawRect(ground, 0.2f, 0.9f, 0.3f);  // green ground    
         DrawRect(player, 0.8f, 0.2f, 0.2f);  // red player  
+        if (menu_opened == true) {
+            DrawRect(menu, 0.8f, 0.2f, 0.2f);
+            printf("this statement is true");
+        }
 
         glfwSwapBuffers(window);
         }

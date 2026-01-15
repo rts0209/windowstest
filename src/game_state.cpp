@@ -17,6 +17,11 @@ rect ground = {
     0.0f
 };
 
+rect menu = {
+    {0.0f, 0.5f},
+    {0.3f, 0.3f}
+};
+
 
 
 // =======================
@@ -24,4 +29,5 @@ rect ground = {
 // =======================
 bool is_grounded = false;
 bool is_jumping = false;
+bool menu_opened = false;
 float delta_time = 0.016f;

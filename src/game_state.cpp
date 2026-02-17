@@ -3,23 +3,32 @@
 // =======================
 // SHARED OBJECTS
 // =======================
-rect player = {
-    { -0.05f, -0.5f },   // pos
-    {  0.1f,   0.1f },   // size
-    {  0.0f,   0.0f },   // velocity
-    0.0f                  // rotation
+rect cube = {
+    {  0.0f, 0.0f,  0.0f },   // pos
+    {  0.2f,   0.2f,  0.2f },   // size | LENGTH, HEIGHT, DEPTH
+    {  0.0f,   0.0f,  0.0f },   // velocity
+    {  0.0f,  0.0f,  0.0f  } // Rotation
 };
 
 rect ground = {
-    { -1.0f, -1.0f },
-    {  2.0f,  0.1f },
-    {  0.0f,  0.0f },
-    0.0f
+    {  0.0f, 0.0f,  0.0f },   // pos
+    {  1.0f,   0.8f,  1.0f },   // size | LENGTH, HEIGHT, DEPTH
+    {  0.0f,   0.0f,  0.0f },   // velocity
+    {  0.0f,  0.0f,  0.0f  } // Rotation
 };
 
-rect menu = {
-    {0.0f, 0.5f},
-    {0.3f, 0.3f}
+rect target_cube_2 = {
+    {  0.0f, 0.0f,  0.0f },   // pos
+    {  0.2f,   0.2f,  0.2f },   // size | LENGTH, HEIGHT, DEPTH
+    {  0.0f,   0.0f,  0.0f },   // velocity
+    {  0.0f,  0.0f,  0.0f  } // Rotation
+};
+
+rect parent = {
+    {  0.0f, 0.0f,  0.0f },   // pos
+    {  0.0f,   0.0f,  0.0f },   // size | LENGTH, HEIGHT, DEPTH
+    {  0.0f,   0.0f,  0.0f },   // velocity
+    {  0.0f,  0.0f,  0.0f  } // Rotation
 };
 
 

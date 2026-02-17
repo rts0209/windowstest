@@ -4,16 +4,17 @@
 // =======================
 // Math Types
 // =======================
-struct Vec2 {
+struct Vec3 {
     float x;
     float y;
+    float z;
 };
 
 struct rect {
-    Vec2 pos;
-    Vec2 size;
-    Vec2 velocity;
-    float rotation;
+    Vec3 pos;
+    Vec3 size;
+    Vec3 velocity;
+    Vec3 rotation;
 };
 
 
@@ -21,9 +22,10 @@ struct rect {
 // =======================
 // SHARED GAME VARIABLES
 // =======================
-extern rect player;
+extern rect parent;
+extern rect cube;
 extern rect ground;
-extern rect menu;
+extern rect target_cube_2;
 
 extern bool is_grounded;
 extern bool is_jumping;

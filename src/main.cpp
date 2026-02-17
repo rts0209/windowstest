@@ -1,138 +1,233 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "stb_image_write.h"
-#include "glad/glad.h"  // Must include GLAD BEFORE GLFW
+#include "glad/glad.h"
 #include <GLFW/glfw3.h>
-#include <cstdio>  // For printf debug output
+#include <cstdio>
 #include <iostream>
 #include <cmath>
 #include "game_state.h"
 
-int height = 32;
-int width = 32;
-int pixels = width * height;
-bool start_vertex = false;
+void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+{
+    if (height == 0) height = 1;
 
-bool CheckCollision(const rect& a, const rect& b) {
-    return (a.pos.x < b.pos.x + b.size.x &&
-            a.pos.x + a.size.x > b.pos.x &&
-            a.pos.y < b.pos.y + b.size.y &&
-            a.pos.y + a.size.y > b.pos.y);
+    glViewport(0, 0, width, height);
+
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+
+    float fov = 70.0f;
+    float aspect = (float)width / (float)height;
+    float nearPlane = 0.1f;
+    float farPlane = 100.0f;
+
+    float top = tan(fov * 3.14159265f / 360.0f) * nearPlane;
+    float bottom = -top;
+    float right = top * aspect;
+    float left = -right;
+
+    glFrustum(left, right, bottom, top, nearPlane, farPlane);
+
+    glMatrixMode(GL_MODELVIEW);
 }
 
-    void DrawRect(const rect& r, float r_col, float g_col, float b_col) {
-        glPushMatrix();
-        glTranslatef(r.pos.x + r.size.x * 0.5f, r.pos.y + r.size.y * 0.5f, 0);
-        glRotatef(r.rotation, 0, 0, 1);
-        glTranslatef(-r.size.x * 0.5f, -r.size.y * 0.5f, 0);
+void DrawCube(const rect& r)
+{
+    glPushMatrix();
 
-        // start drawing quads
-        glBegin(GL_QUADS);
-            glColor3f(r_col, g_col, b_col);
-            glVertex2f(0, 0);
-            glVertex2f(r.size.x, 0);
-            glVertex2f(r.size.x, r.size.y);
-            glVertex2f(0, r.size.y);
-        glEnd();
+    glTranslatef(r.pos.x, r.pos.y, r.pos.z);
+
+    glRotatef(r.rotation.x, 1, 0, 0);
+    glRotatef(r.rotation.y, 0, 1, 0);
+    glRotatef(r.rotation.z, 0, 0, 1);
+
+    float x = r.size.x;
+    float y = r.size.y;
+    float z = r.size.z;
+
+    glBegin(GL_QUADS);
+
+    // Front
+    glColor3f(1,0,0);
+    glVertex3f(0,0,z);
+    glVertex3f(x,0,z);
+    glVertex3f(x,y,z);
+    glVertex3f(0,y,z);
+
+    // Back
+    glColor3f(0,1,0);
+    glVertex3f(0,0,0);
+    glVertex3f(0,y,0);
+    glVertex3f(x,y,0);
+    glVertex3f(x,0,0);
+
+    // Left
+    glColor3f(0,0,1);
+    glVertex3f(0,0,0);
+    glVertex3f(0,0,z);
+    glVertex3f(0,y,z);
+    glVertex3f(0,y,0);
+
+    // Right
+    glColor3f(1,1,0);
+    glVertex3f(x,0,0);
+    glVertex3f(x,y,0);
+    glVertex3f(x,y,z);
+    glVertex3f(x,0,z);
+
+    // Top
+    glColor3f(1,0,1);
+    glVertex3f(0,y,0);
+    glVertex3f(0,y,z);
+    glVertex3f(x,y,z);
+    glVertex3f(x,y,0);
+
+    // Bottom
+    glColor3f(0,1,1);
+    glVertex3f(0,0,0);
+    glVertex3f(x,0,0);
+    glVertex3f(x,0,z);
+    glVertex3f(0,0,z);
+
+    glEnd();
 
     glPopMatrix();
-    }
+}
 
-
-
-int main(void) {
-    glfwSwapInterval(1); // Enable VSync
-    glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
-
-    printf("Starting program...\n");
-
-    GLFWwindow* window;
-
-    printf("Initializing GLFW...\n");
-    if (!glfwInit()) {
-        printf("GLFW init failed!\n");
+int main()
+{
+    if (!glfwInit())
         return -1;
-    }
 
-    printf("Creating window...\n");
-    window = glfwCreateWindow(1200, 1200, "Huh. ", NULL, NULL);
-    if (!window) {
-        printf("Window creation failed!\n");
+    GLFWwindow* window = glfwCreateWindow(1200, 1200, "3D Test", NULL, NULL);
+    if (!window)
+    {
         glfwTerminate();
         return -1;
     }
 
-    printf("Making context current...\n");
     glfwMakeContextCurrent(window);
-    gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 
-    // World Setup
-
-     
-    printf("Initializing GLAD...\n");
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-        printf("GLAD load failed!\n");
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+    {
         glfwTerminate();
         return -1;
     }
 
-    printf("Loading icon...\n");
-    int icon_width, icon_height, icon_channels;
-    unsigned char* icon_pixels = stbi_load("C:/Users/nismo/Downloads/images.jpg", &icon_width, &icon_height, &icon_channels, 4);  // Changed to relative path
-    if (!icon_pixels) {
-        printf("Icon load failed! STB Error: %s\n", stbi_failure_reason());  // More debug info
-        printf("Continuing without icon...\n");
-    } else {
-        printf("Icon loaded successfully: %dx%d\n", icon_width, icon_height);
-        GLFWimage images[1];
-        images[0].width = icon_width; 
-        images[0].height = icon_height;
-        images[0].pixels = icon_pixels;
-        glfwSetWindowIcon(window, 1, images);
-        stbi_image_free(icon_pixels);  // Free immediately after setting
-    }
+    glEnable(GL_DEPTH_TEST);
 
-//  ------------------------------------------------------------------------------------------------------------
-    printf("Entering main loop...\n");
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
-    double lastTime = glfwGetTime();
-    printf("%.f\n", lastTime);
+    // Force projection setup once
+    framebuffer_size_callback(window, 1200, 1200);
 
-    while (!glfwWindowShouldClose(window)) {
-        
+    glClearColor(0.1f, 0.1f, 0.15f, 1.0f);
 
-        double now = glfwGetTime();
-        float dt = float(now - lastTime);
-        lastTime = now;
+    parent.pos.x = 0.0f;
+    parent.pos.y = 0.0f;
+    parent.pos.z = 0.0f;
+    parent.rotation.x = 0.0f;
+    parent.rotation.y = 0.0f;
+    parent.rotation.z = 0.0f;
 
+    ground.pos.y = -0.8f;
+    ground.pos.x = 0.0f;
+    cube.pos.x = 0;
+    cube.pos.y = 0;
+    cube.pos.z = 0;
+
+    while (!glfwWindowShouldClose(window))
+    {
         glfwPollEvents();
 
-            if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
-                //printf("ESC pressed, exiting...\n");
-                glfwTerminate();
-                return -1;
-            }
+        /*
+        if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
+            cube.rotation.x += 0.25f;
+        if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
+            cube.rotation.x -= 0.25f;
+        if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
+            cube.rotation.y += 0.25f;
+        if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
+            cube.rotation.y -= 0.25f;
 
-        if(glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) {
+        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+            cube.pos.z -= 0.005f;
+        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+            cube.pos.z += 0.005f;
+
+        if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
+            cube.pos.y += 0.005f;
+        if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
+            cube.pos.y -= 0.005f;
+
+        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+            cube.pos.x -= 0.005f;
+        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+            cube.pos.x += 0.005f;
+
+        */
+
+        if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) {
+            parent.rotation.x = 0.0f;
+            parent.rotation.y = 0.0f;
+            parent.rotation.z = 0.0f;
+
         }
-    
-        // Rendering
-        glClear(GL_COLOR_BUFFER_BIT);
+
+        cube.rotation.x = parent.rotation.x;
+        cube.rotation.y = parent.rotation.y;
+        cube.rotation.z = parent.rotation.z;
+        ground.rotation.x = parent.rotation.x;
+        ground.rotation.y = parent.rotation.y;
+        ground.rotation.z = parent.rotation.z;
+
+        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+            ground.pos.z += -0.001f;
+        }
+        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+            cube.pos.z += 0.001f;
+        }
+        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+            cube.pos.x += 0.001f;
+        }
+        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+            cube.pos.x += -0.001f;
+        }
+
+        if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
+            parent.rotation.y += 0.05f;
+        }
+        if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
+            parent.rotation.y += -0.05f;
+        }
+        if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+            parent.rotation.x += 0.05f;
+        }
+        if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+            parent.rotation.x += -0.05f;
+        }
+
+        
+
+        if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+            glfwTerminate;
+            return -1;
+        }
+
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
         glLoadIdentity();
 
-        DrawRect(ground, 0.2f, 0.9f, 0.3f);  // green ground    
+        // Camera
+        glTranslatef(-0.15f, -0.15f, -2.0f);
+
+        DrawCube(cube);
+        DrawCube(ground);
+        //DrawCube(target_cube_2);
 
         glfwSwapBuffers(window);
-        }
+    }
 
-        GLFW_RESIZABLE; // Approx 60 FPS
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
-        glfwSwapBuffers(window);
-             
-
-    printf("Exiting program...\n");
     glfwTerminate();
     return 0;
-    }
+}

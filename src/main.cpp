@@ -6,6 +6,8 @@
 #include <iostream>
 #include <cmath>
 #include "game_state.h"
+#include "input.h"
+#include "infworld.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
@@ -35,59 +37,62 @@ void DrawCube(const rect& r)
 {
     glPushMatrix();
 
+    // Move the object so its center is placed at world-space position.
     glTranslatef(r.pos.x, r.pos.y, r.pos.z);
 
+    // Rotate around object-local origin (which is now the cube center).
     glRotatef(r.rotation.x, 1, 0, 0);
     glRotatef(r.rotation.y, 0, 1, 0);
     glRotatef(r.rotation.z, 0, 0, 1);
 
-    float x = r.size.x;
-    float y = r.size.y;
-    float z = r.size.z;
+    // Centered half-extents, so local origin is exactly in the middle.
+    const float hx = r.size.x * 0.5f;
+    const float hy = r.size.y * 0.5f;
+    const float hz = r.size.z * 0.5f;
 
     glBegin(GL_QUADS);
 
-    // Front
-    glColor3f(1,0,0);
-    glVertex3f(0,0,z);
-    glVertex3f(x,0,z);
-    glVertex3f(x,y,z);
-    glVertex3f(0,y,z);
+    // Front (+Z)
+    glColor3f(1, 0, 0);
+    glVertex3f(-hx, -hy, +hz);
+    glVertex3f(+hx, -hy, +hz);
+    glVertex3f(+hx, +hy, +hz);
+    glVertex3f(-hx, +hy, +hz);
 
-    // Back
-    glColor3f(0,1,0);
-    glVertex3f(0,0,0);
-    glVertex3f(0,y,0);
-    glVertex3f(x,y,0);
-    glVertex3f(x,0,0);
+    // Back (-Z)
+    glColor3f(0, 1, 0);
+    glVertex3f(-hx, -hy, -hz);
+    glVertex3f(-hx, +hy, -hz);
+    glVertex3f(+hx, +hy, -hz);
+    glVertex3f(+hx, -hy, -hz);
 
-    // Left
-    glColor3f(0,0,1);
-    glVertex3f(0,0,0);
-    glVertex3f(0,0,z);
-    glVertex3f(0,y,z);
-    glVertex3f(0,y,0);
+    // Left (-X)
+    glColor3f(0, 0, 1);
+    glVertex3f(-hx, -hy, -hz);
+    glVertex3f(-hx, -hy, +hz);
+    glVertex3f(-hx, +hy, +hz);
+    glVertex3f(-hx, +hy, -hz);
 
-    // Right
-    glColor3f(1,1,0);
-    glVertex3f(x,0,0);
-    glVertex3f(x,y,0);
-    glVertex3f(x,y,z);
-    glVertex3f(x,0,z);
+    // Right (+X)
+    glColor3f(1, 1, 0);
+    glVertex3f(+hx, -hy, -hz);
+    glVertex3f(+hx, +hy, -hz);
+    glVertex3f(+hx, +hy, +hz);
+    glVertex3f(+hx, -hy, +hz);
 
-    // Top
-    glColor3f(1,0,1);
-    glVertex3f(0,y,0);
-    glVertex3f(0,y,z);
-    glVertex3f(x,y,z);
-    glVertex3f(x,y,0);
+    // Top (+Y)
+    glColor3f(1, 0, 1);
+    glVertex3f(-hx, +hy, -hz);
+    glVertex3f(-hx, +hy, +hz);
+    glVertex3f(+hx, +hy, +hz);
+    glVertex3f(+hx, +hy, -hz);
 
-    // Bottom
-    glColor3f(0,1,1);
-    glVertex3f(0,0,0);
-    glVertex3f(x,0,0);
-    glVertex3f(x,0,z);
-    glVertex3f(0,0,z);
+    // Bottom (-Y)
+    glColor3f(0, 1, 1);
+    glVertex3f(-hx, -hy, -hz);
+    glVertex3f(+hx, -hy, -hz);
+    glVertex3f(+hx, -hy, +hz);
+    glVertex3f(-hx, -hy, +hz);
 
     glEnd();
 
@@ -132,82 +137,30 @@ int main()
 
     ground.pos.y = -0.8f;
     ground.pos.x = 0.0f;
+    ground.size.x = 1.0f;
+    ground.size.z = 1.0f;
     cube.pos.x = 0;
-    cube.pos.y = 0;
+    cube.pos.y = 1.0f;
     cube.pos.z = 0;
+
+    is_grounded = true;
 
     while (!glfwWindowShouldClose(window))
     {
         glfwPollEvents();
 
-        /*
-        if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
-            cube.rotation.x += 0.25f;
-        if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
-            cube.rotation.x -= 0.25f;
-        if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
-            cube.rotation.y += 0.25f;
-        if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
-            cube.rotation.y -= 0.25f;
 
-        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-            cube.pos.z -= 0.005f;
-        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-            cube.pos.z += 0.005f;
-
-        if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
-            cube.pos.y += 0.005f;
-        if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
-            cube.pos.y -= 0.005f;
-
-        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-            cube.pos.x -= 0.005f;
-        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-            cube.pos.x += 0.005f;
-
-        */
 
         if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) {
-            parent.rotation.x = 0.0f;
-            parent.rotation.y = 0.0f;
-            parent.rotation.z = 0.0f;
+            is_grounded = true;
+            cube.velocity.x = 0.0f;
+            cube.velocity.y = 0.0f;
+            cube.velocity.z = 0.0f;
+            cube.pos.x = 0.0f;
+            cube.pos.y = 0.0f;
+            cube.pos.z = 0.0f;
 
-        }
-
-        cube.rotation.x = parent.rotation.x;
-        cube.rotation.y = parent.rotation.y;
-        cube.rotation.z = parent.rotation.z;
-        ground.rotation.x = parent.rotation.x;
-        ground.rotation.y = parent.rotation.y;
-        ground.rotation.z = parent.rotation.z;
-
-        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-            ground.pos.z += -0.001f;
-        }
-        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-            cube.pos.z += 0.001f;
-        }
-        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-            cube.pos.x += 0.001f;
-        }
-        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-            cube.pos.x += -0.001f;
-        }
-
-        if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
-            parent.rotation.y += 0.05f;
-        }
-        if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
-            parent.rotation.y += -0.05f;
-        }
-        if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
-            parent.rotation.x += 0.05f;
-        }
-        if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
-            parent.rotation.x += -0.05f;
-        }
-
-        
+        }     
 
         if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
             glfwTerminate;
@@ -221,9 +174,22 @@ int main()
         // Camera
         glTranslatef(-0.15f, -0.15f, -2.0f);
 
+        converttochunkcoords(cube, ground, window);
+
+        playerinputs(window);
+
+        PositiontoVelocity(cube, window);
+
+        check_for_ground(cube, ground);
+
+        IsOnObject(cube, ground, window);
+        
+        groundedfunctions(cube, ground, window);
+
         DrawCube(cube);
+
         DrawCube(ground);
-        //DrawCube(target_cube_2);
+
 
         glfwSwapBuffers(window);
     }

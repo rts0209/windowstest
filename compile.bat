@@ -28,18 +28,26 @@ echo Compiling %SRC_DIR%/Sub files...
 g++ -c %SRC_DIR%/game_state.cpp -I %INCLUDE_DIR% -I %INCLUDE_DIR%/STB -I %INCLUDE_DIR%/glad -I %INCLUDE_DIR%/GLFW -I %INCLUDE_DIR%/KHR -o game_state.o
 if errorlevel 1 goto error
 
+g++ -c %SRC_DIR%/input.cpp -I %INCLUDE_DIR% -I %INCLUDE_DIR%/STB -I %INCLUDE_DIR%/glad -I %INCLUDE_DIR%/GLFW -I %INCLUDE_DIR%/KHR -o input.o
+if errorlevel 1 goto error
+
+g++ -c %SRC_DIR%/infworld.cpp -I %INCLUDE_DIR% -I %INCLUDE_DIR%/STB -I %INCLUDE_DIR%/glad -I %INCLUDE_DIR%/GLFW -I %INCLUDE_DIR%/KHR -o infworld.o
+if errorlevel 1 goto error
+
 REM Check for GLFW
 if not exist %LIB_DIR%\libglfw3.a goto error
 
 REM Link everything
 echo Linking...
-g++ main.o glad.o game_state.o -L %LIB_DIR% -lglfw3 -lopengl32 -lgdi32 -o %BIN_DIR%/program.exe
+g++ main.o glad.o game_state.o input.o infworld.o -L %LIB_DIR% -lglfw3 -lopengl32 -lgdi32 -o %BIN_DIR%/program.exe
 if errorlevel 1 goto error
 
 REM Cleanup
 del main.o
 del glad.o
 del game_state.o
+del input.o
+del infworld.o
 
 echo Build successful!
 pause

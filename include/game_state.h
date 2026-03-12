@@ -25,11 +25,12 @@ struct rect {
 extern rect parent;
 extern rect cube;
 extern rect ground;
-extern rect target_cube_2;
 
 extern bool is_grounded;
-extern bool is_jumping;
+extern bool is_bottom_below;
 extern bool menu_opened;
 extern float delta_time;
+extern float chunkcoord_x;
+extern float chunkcoord_y;
 
 #endif
